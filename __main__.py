@@ -2,7 +2,7 @@ import argparse
 import logging
 import os
 
-from . import base, constants
+from . import base, constants, robot, util
 
 
 def parse_args():
@@ -34,13 +34,6 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--base",
-        default=os.path.dirname(__file__),
-        type=str,
-        help="Base directory"
-    )
-
-    parser.add_argument(
         '--log-level',
         dest='log_level_str',
         default='INFO',
@@ -57,18 +50,10 @@ def parse_args():
     args = parser.parse_args()
     args.log_level = LOG_STR_LEVELS[args.log_level_str]
     args.base = os.path.normpath(os.path.realpath(args.base))
-    args.bind_address =
+    args.bind_address = util.split_address(args.bind_address, "--bind-address")
+    args.connect_address = util.split_address(
+        args.connect_address, "--connect-address")
     return args
-
-
-def split_address(address, name):
-    a = address.split(":")
-    if len(a) != 2:
-        raise ValueError(
-            """%s need to be in the next format:
-                server_address:server_port""" % name
-        )
-    return a
 
 
 def main():
@@ -85,7 +70,9 @@ def main():
             level=args.log_level,
         )
     logger.info("Parsed args and created logger")
-    robot = robot.Robot
+    r = robot.Robot(args.buff_size)
+    r.connect()
+    r.register()
     for f in close_file:
         f.close()
 

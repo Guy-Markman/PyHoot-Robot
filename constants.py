@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 BLOCK_SIZE = 1024
+COOKIE_HEADER = "Cookie: "
 CRLF = '\r\n'
 CRLF_BIN = CRLF.encode('utf-8')
 DEFAULT_HTTP_PORT = 80

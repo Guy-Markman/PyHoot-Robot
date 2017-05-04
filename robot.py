@@ -4,7 +4,7 @@ import socket
 from . import base, constants, util
 
 
-class Robot(base):
+class Robot(base.Base):
     def __init__(self, buff_size, bind_address):
         super(Robot, self).__init__()
         self._buff_size = buff_size
@@ -13,8 +13,12 @@ class Robot(base):
             type=socket.SOCK_STREAM,
         )
         self._socket.bind((bind_address[0], bind_address[1]))
-        self._bind_address = bind_address.join(":")
+        self._bind_address = ":".join(str(x) for x in bind_address)
         self._cookie = Cookie.SimpleCookie()
+        self.logger.info(
+            "Created Robot on %s with buff size of %s",
+            bind_address,
+            buff_size)
 
     def xmlhttprequest(self, url, method="GET"):
         request = (
@@ -98,7 +102,63 @@ class Robot(base):
         return file
 
     def connect(self, address):
-        self._socket.connect(address)
+        self._socket.connect((address[0], address[1]))
+        self.logger.info("Connected to server")
+
+    def register(self):
+
+        #  Check join number
+        join_number = raw_input("Enter join number. ")
+        if not util.xmlstring_to_boolean(self.xmlhttprequest(
+                util.build_url(
+                    "check_test",
+                    {"join_number": join_number}
+                )
+            )
+        ):
+            while True:
+                join_number = raw_input("No such Game Pin, enter right one. ")
+                if util.xmlstring_to_boolean(self.xmlhttprequest(
+                        util.build_url(
+                            "check_test",
+                            {"join_number":
+                                join_number}
+                        )
+                    )
+                ):
+                    break
+
+        #  Check name
+        name = raw_input("Choose name ")
+        while True:
+            if len(name) < 3:
+                raw_input("Name too short, at least 3 characters. ")
+            else:
+                break
+        if not util.xmlstring_to_boolean(self.xmlhttprequest(
+                util.build_url(
+                    "check_name",
+                    {"join_number": join_number, "name": name}
+                )
+            )
+        ):
+            while True:
+                name = raw_input("Enter join number. ")
+                while True:
+                    if len(name) < 3:
+                        raw_input("Name too short, at least 3 characters. ")
+                    else:
+                        break
+                if util.xmlstring_to_boolean(self.xmlhttprequest(
+                        util.build_url(
+                            "check_test",
+                            {"check_test":
+                                "No such Game Pin, enter right one. "}
+                        )
+                    )
+                ):
+                    break
+            break
 
     #  Taught robot to love
     def love(self):

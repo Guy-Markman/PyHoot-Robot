@@ -1,6 +1,5 @@
 import argparse
 import logging
-import os
 
 from . import base, constants, robot, util
 
@@ -28,7 +27,7 @@ def parse_args():
     )
     parser.add_argument(
         "--buff-size",
-        default=constants.BUFF_SIZE,
+        default=constants.BLOCK_SIZE,
         type=int,
         help="Buff size for each time, default %(default)d"
     )
@@ -49,7 +48,6 @@ def parse_args():
     )
     args = parser.parse_args()
     args.log_level = LOG_STR_LEVELS[args.log_level_str]
-    args.base = os.path.normpath(os.path.realpath(args.base))
     args.bind_address = util.split_address(args.bind_address, "--bind-address")
     args.connect_address = util.split_address(
         args.connect_address, "--connect-address")
@@ -70,9 +68,9 @@ def main():
             level=args.log_level,
         )
     logger.info("Parsed args and created logger")
-    r = robot.Robot(args.buff_size)
-    r.connect()
-    r.register()
+    r = robot.Robot(args.buff_size, args.bind_address)
+    r.connect(args.connect_address)
+
     for f in close_file:
         f.close()
 

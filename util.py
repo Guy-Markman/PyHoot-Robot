@@ -1,6 +1,7 @@
-import constants
 import urlparse
 from xml.etree import ElementTree
+
+import constants
 
 
 def send_all(s, buf):
@@ -51,11 +52,11 @@ def split_address(address, name):
 
 
 def parse_xml_from_string(xmlstring):
-    return ElementTree.fromstring(xmlstring).getroot()
+    return ElementTree.fromstring(xmlstring.decode("utf-8"))
 
 
 def xmlstring_to_boolean(xmlstring):
-    return parse_xml_from_string(xmlstring).attrib["answer"] == "True"
+    return parse_xml_from_string(str(xmlstring)).attrib["answer"] == "True"
 
 
 def build_url(path, querry):

@@ -36,6 +36,7 @@ class Robot(base.Base):
         if cookie_output != "":
             request += "%s %s" % (cookie_output, constants.CRLF)
         request += constants.CRLF
+        self.logger.debug("Request \n%s", request)
 
         util.send_all(
             self._socket,
@@ -46,7 +47,9 @@ class Robot(base.Base):
         #
         # Parse status line
         #
+
         status, rest = util.recv_line(self._socket, rest)
+        response = status
         status_comps = status.split(' ', 2)
         if status_comps[0] != constants.HTTP_SIGNATURE:
             raise RuntimeError('Not HTTP protocol')
@@ -55,7 +58,7 @@ class Robot(base.Base):
 
         signature, code, message = status_comps
         if code != '200':
-            raise RuntimeError('HTTP failure %s: %s' % (code, message))
+            raise RuntimeError('HTTP failure %s: %s',  (code, message))
 
         #
         # Parse headers
@@ -65,7 +68,7 @@ class Robot(base.Base):
             line, rest = util.recv_line(self._socket, rest)
             if not line:
                 break
-
+            response += "%s\r\n" % line
             name, value = util.parse_header(line)
             if name == 'Content-Length':
                 content_length = int(value)
@@ -73,7 +76,9 @@ class Robot(base.Base):
                 self._cookie.load(value)
         else:
             raise RuntimeError('Too many headers')
-
+        print "\n" in response
+        print "\r\n" in response
+        self.logger.debug("Headers response \n%s", response)
         file = ""
         if content_length is None:
             # Fast track, no content length
@@ -99,6 +104,7 @@ class Robot(base.Base):
                 buf, rest = rest[:left_to_read], rest[left_to_read:]
                 file += buf
                 left_to_read -= len(buf)
+        self.logger.debug("Response content\n %s", file)
         return file
 
     def connect(self, address):
@@ -109,6 +115,7 @@ class Robot(base.Base):
 
         #  Check join number
         join_number = raw_input("Enter join number. ")
+        print type(join_number)
         if not util.xmlstring_to_boolean(self.xmlhttprequest(
                 util.build_url(
                     "check_test",
@@ -158,7 +165,6 @@ class Robot(base.Base):
                     )
                 ):
                     break
-            break
 
     #  Taught robot to love
     def love(self):

@@ -70,6 +70,7 @@ def main():
     logger.info("Parsed args and created logger")
     r = robot.Robot(args.buff_size, args.bind_address)
     r.connect(args.connect_address)
+    r.register()
 
     for f in close_file:
         f.close()

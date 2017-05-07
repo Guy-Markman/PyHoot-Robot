@@ -68,9 +68,8 @@ def main():
             level=args.log_level,
         )
     logger.info("Parsed args and created logger")
-    r = robot.Robot(args.buff_size, args.bind_address)
-    r.connect(args.connect_address)
-    r.register()
+    r = robot.Robot(args.buff_size, args.bind_address, args.connect_address)
+    r.play(*r.register())
 
     for f in close_file:
         f.close()

@@ -1,19 +1,22 @@
 import Cookie
+import random
 import socket
+import time
 
 from . import base, constants, util
 
 
 class Robot(base.Base):
-    def __init__(self, buff_size, bind_address):
+    def __init__(self, buff_size, bind_address, connect_address):
         super(Robot, self).__init__()
         self._buff_size = buff_size
         self._socket = socket.socket(
             family=socket.AF_INET,
             type=socket.SOCK_STREAM,
         )
-        self._socket.bind((bind_address[0], bind_address[1]))
-        self._bind_address = ":".join(str(x) for x in bind_address)
+        self._connect_address = tuple(connect_address)
+        self._bind_address = tuple(bind_address)
+        self.connect()
         self._cookie = Cookie.SimpleCookie()
         self.logger.info(
             "Created Robot on %s with buff size of %s",
@@ -57,7 +60,7 @@ class Robot(base.Base):
             raise RuntimeError('Incomplete HTTP protocol')
 
         signature, code, message = status_comps
-        if code != '200':
+        if code not in ('200', '302'):
             raise RuntimeError('HTTP failure %s: %s',  (code, message))
 
         #
@@ -73,11 +76,11 @@ class Robot(base.Base):
             if name == 'Content-Length':
                 content_length = int(value)
             if name == 'Set-Cookie':
-                self._cookie.load(value)
+                print value
+                self._cookie.load(str(value))
         else:
             raise RuntimeError('Too many headers')
-        print "\n" in response
-        print "\r\n" in response
+
         self.logger.debug("Headers response \n%s", response)
         file = ""
         if content_length is None:
@@ -105,10 +108,18 @@ class Robot(base.Base):
                 file += buf
                 left_to_read -= len(buf)
         self.logger.debug("Response content\n %s", file)
+        self.connect()
         return file
 
-    def connect(self, address):
-        self._socket.connect((address[0], address[1]))
+    def connect(self):
+        if self._socket is not None:
+            self._socket.close()
+        self._socket = socket.socket(
+            family=socket.AF_INET,
+            type=socket.SOCK_STREAM,
+        )
+        self._socket.bind((self._bind_address))
+        self._socket.connect((self._connect_address))
         self.logger.info("Connected to server")
 
     def register(self):
@@ -134,7 +145,6 @@ class Robot(base.Base):
                     )
                 ):
                     break
-
         #  Check name
         name = raw_input("Choose name ")
         while True:
@@ -165,7 +175,36 @@ class Robot(base.Base):
                     )
                 ):
                     break
+        return [join_number, name]
+
+    def play(self, join_number, name):
+        state = "wait"
+        self.xmlhttprequest(util.build_url(
+            "join", {"name": name, "join_number": join_number}), method="GET")
+        self.logger.debug("Registered to %s as %s", join_number, name)
+        url_check_move = util.build_url("check_move_next_page")
+        moved = util.build_url("moved_to_next_question")
+        while True:
+            if util.xmlstring_to_boolean(self.xmlhttprequest(url_check_move)):
+                if state == "wait":
+                    state = "question"
+                elif state == "question":
+                    state = "wait_question"
+                    self.xmlhttprequest(
+                        "answer",
+                        util.build_url(
+                            {"letter": random.choice(["A", "B", "C", "D"])
+                             }))
+                elif state == "wait_question":
+                    state = "leadeboard"
+                elif state == "leadeboard":
+                    state = "question"
+                self.xmlhttprequest("/moved_to_next_question")
+                self.logger.debug("Moved to state %s", state)
+
+            time.sleep(1)
 
     #  Taught robot to love
+
     def love(self):
         return "<3"

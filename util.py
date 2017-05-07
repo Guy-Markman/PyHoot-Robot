@@ -59,7 +59,7 @@ def xmlstring_to_boolean(xmlstring):
     return parse_xml_from_string(str(xmlstring)).attrib["answer"] == "True"
 
 
-def build_url(path, querry):
+def build_url(path, querry={}):
     return urlparse.urlunsplit(urlparse.SplitResult(
         "",
         "",

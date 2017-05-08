@@ -1,5 +1,6 @@
 import Cookie
 import random
+import os
 import socket
 import time
 
@@ -191,7 +192,12 @@ class Robot(base.Base):
                     state = "wait_question"
                     self.logger.debug("question")
                     picture = self.xmlhttprequest("/%s" %self.get_picture())
-                    print picture
+                    print "len %s" % len(picture)
+                    file = open("TEST.png", "wb")
+                    try:
+                        file.write(picture)
+                    finally:
+                        file.close()
                     self.logger.debug("start sending answer")
                     self.xmlhttprequest(
                         util.build_url(

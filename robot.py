@@ -185,17 +185,22 @@ class Robot(base.Base):
         url_check_move = util.build_url("check_move_next_page")
         moved = util.build_url("moved_to_next_question")
         while True:
+            self.logger.debug("state %s", state)
             if util.xmlstring_to_boolean(self.xmlhttprequest(url_check_move)):
                 if state == "wait":
+                    self.logger.debug("wait")
                     state = "question"
-                elif state == "question":
                     state = "wait_question"
+                    self.logger.debug("question")
+                    self.logger.debug("start sending answer")
                     self.xmlhttprequest(
                         "answer",
                         util.build_url(
                             {"letter": random.choice(["A", "B", "C", "D"])
                              }))
+                    self.logger.debug("ended")
                 elif state == "wait_question":
+                    self.logger.debug("wait_question")
                     state = "leadeboard"
                 elif state == "leadeboard":
                     state = "question"

@@ -76,7 +76,6 @@ class Robot(base.Base):
             if name == 'Content-Length':
                 content_length = int(value)
             if name == 'Set-Cookie':
-                print value
                 self._cookie.load(str(value))
         else:
             raise RuntimeError('Too many headers')
@@ -126,7 +125,6 @@ class Robot(base.Base):
 
         #  Check join number
         join_number = raw_input("Enter join number. ")
-        print type(join_number)
         if not util.xmlstring_to_boolean(self.xmlhttprequest(
                 util.build_url(
                     "check_test",
@@ -192,10 +190,12 @@ class Robot(base.Base):
                     state = "question"
                     state = "wait_question"
                     self.logger.debug("question")
+                    picture = self.xmlhttprequest("/%s" %self.get_picture())
+                    print picture
                     self.logger.debug("start sending answer")
                     self.xmlhttprequest(
-                        "answer",
                         util.build_url(
+                            "answer",
                             {"letter": random.choice(["A", "B", "C", "D"])
                              }))
                     self.logger.debug("ended")
@@ -210,6 +210,17 @@ class Robot(base.Base):
             time.sleep(1)
 
     #  Taught robot to love
+    
+    def get_picture(self):
+        text = self.xmlhttprequest("/get_question")
+        question = util.parse_xml_from_string(text).find("./Text").text
+        if "<img" not in question:
+            return ""
+        question = question[question.index("<img"):]
+        question = question[0:question.index("/>")+len("/>")]
+        question = question[question.index("src=")+len("src=")+1:]
+        question = question[:question.index('"')]
+        return question
 
     def love(self):
         return "<3"

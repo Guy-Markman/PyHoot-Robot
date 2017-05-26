@@ -1,6 +1,5 @@
 import Cookie
 import random
-import os
 import socket
 import time
 
@@ -182,7 +181,6 @@ class Robot(base.Base):
             "join", {"name": name, "join_number": join_number}), method="GET")
         self.logger.debug("Registered to %s as %s", join_number, name)
         url_check_move = util.build_url("check_move_next_page")
-        moved = util.build_url("moved_to_next_question")
         while True:
             self.logger.debug("state %s", state)
             if util.xmlstring_to_boolean(self.xmlhttprequest(url_check_move)):
@@ -191,8 +189,7 @@ class Robot(base.Base):
                     state = "question"
                     state = "wait_question"
                     self.logger.debug("question")
-                    picture = self.xmlhttprequest("/%s" %self.get_picture())
-                    print "len %s" % len(picture)
+                    picture = self.xmlhttprequest("/%s" % self.get_picture())
                     file = open("TEST.png", "wb")
                     try:
                         file.write(picture)
@@ -215,18 +212,17 @@ class Robot(base.Base):
 
             time.sleep(1)
 
-    #  Taught robot to love
-    
     def get_picture(self):
-        text = self.xmlhttprequest("/get_question")
-        question = util.parse_xml_from_string(text).find("./Text").text
+        text = self.xmlhttprequest("/get_title")
+        question = util.parse_xml_from_string(text).find("./title").text
         if "<img" not in question:
             return ""
         question = question[question.index("<img"):]
-        question = question[0:question.index("/>")+len("/>")]
-        question = question[question.index("src=")+len("src=")+1:]
+        question = question[0:question.index("/>") + len("/>")]
+        question = question[question.index("src=") + len("src=") + 1:]
         question = question[:question.index('"')]
         return question
 
+    #  Taught robot to love
     def love(self):
         return "<3"

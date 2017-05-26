@@ -5,6 +5,8 @@ import time
 
 from . import base, constants, util
 
+POSSIBLE_ANSWERS = ["A", "B", "C", "D"]
+
 
 class Robot(base.Base):
     def __init__(self, buff_size, bind_address, connect_address):
@@ -184,29 +186,24 @@ class Robot(base.Base):
         while True:
             self.logger.debug("state %s", state)
             if util.xmlstring_to_boolean(self.xmlhttprequest(url_check_move)):
-                if state == "wait":
-                    self.logger.debug("wait")
-                    state = "question"
+                if state in ("wait", "leadeboard"):
                     state = "wait_question"
                     self.logger.debug("question")
                     picture = self.xmlhttprequest("/%s" % self.get_picture())
-                    file = open("TEST.png", "wb")
-                    try:
-                        file.write(picture)
-                    finally:
-                        file.close()
+                    letter = self.decrypt(picture)
+                    if letter is None:
+                        letter = random.choice(POSSIBLE_ANSWERS)
+                    self.logger.debug("Answered %s", letter)
                     self.logger.debug("start sending answer")
                     self.xmlhttprequest(
                         util.build_url(
                             "answer",
-                            {"letter": random.choice(["A", "B", "C", "D"])
+                            {"letter": letter
                              }))
                     self.logger.debug("ended")
                 elif state == "wait_question":
                     self.logger.debug("wait_question")
                     state = "leadeboard"
-                elif state == "leadeboard":
-                    state = "question"
                 self.xmlhttprequest("/moved_to_next_question")
                 self.logger.debug("Moved to state %s", state)
 
@@ -222,6 +219,12 @@ class Robot(base.Base):
         question = question[question.index("src=") + len("src=") + 1:]
         question = question[:question.index('"')]
         return question
+
+    def decrypt(self, picture):
+        letter = None
+        if len(picture) > 0 and picture[-1] in POSSIBLE_ANSWERS:
+            letter = picture[-1]
+        return letter
 
     #  Taught robot to love
     def love(self):

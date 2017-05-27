@@ -1,20 +1,29 @@
 import Cookie
+import random
 import socket
+import time
 
 from . import base, constants, util
 
+POSSIBLE_ANSWERS = ["A", "B", "C", "D"]
 
-class Robot(base):
-    def __init__(self, buff_size, bind_address):
+
+class Robot(base.Base):
+    def __init__(self, buff_size, bind_address, connect_address):
         super(Robot, self).__init__()
         self._buff_size = buff_size
         self._socket = socket.socket(
             family=socket.AF_INET,
             type=socket.SOCK_STREAM,
         )
-        self._socket.bind((bind_address[0], bind_address[1]))
-        self._bind_address = bind_address.join(":")
+        self._connect_address = tuple(connect_address)
+        self._bind_address = tuple(bind_address)
+        self.connect()
         self._cookie = Cookie.SimpleCookie()
+        self.logger.info(
+            "Created Robot on %s with buff size of %s",
+            bind_address,
+            buff_size)
 
     def xmlhttprequest(self, url, method="GET"):
         request = (
@@ -32,6 +41,7 @@ class Robot(base):
         if cookie_output != "":
             request += "%s %s" % (cookie_output, constants.CRLF)
         request += constants.CRLF
+        self.logger.debug("Request \n%s", request)
 
         util.send_all(
             self._socket,
@@ -42,7 +52,9 @@ class Robot(base):
         #
         # Parse status line
         #
+
         status, rest = util.recv_line(self._socket, rest)
+        response = status
         status_comps = status.split(' ', 2)
         if status_comps[0] != constants.HTTP_SIGNATURE:
             raise RuntimeError('Not HTTP protocol')
@@ -50,8 +62,8 @@ class Robot(base):
             raise RuntimeError('Incomplete HTTP protocol')
 
         signature, code, message = status_comps
-        if code != '200':
-            raise RuntimeError('HTTP failure %s: %s' % (code, message))
+        if code not in ('200', '302'):
+            raise RuntimeError('HTTP failure %s: %s',  (code, message))
 
         #
         # Parse headers
@@ -61,15 +73,16 @@ class Robot(base):
             line, rest = util.recv_line(self._socket, rest)
             if not line:
                 break
-
+            response += "%s\r\n" % line
             name, value = util.parse_header(line)
             if name == 'Content-Length':
                 content_length = int(value)
             if name == 'Set-Cookie':
-                self._cookie.load(value)
+                self._cookie.load(str(value))
         else:
             raise RuntimeError('Too many headers')
 
+        self.logger.debug("Headers response \n%s", response)
         file = ""
         if content_length is None:
             # Fast track, no content length
@@ -95,10 +108,123 @@ class Robot(base):
                 buf, rest = rest[:left_to_read], rest[left_to_read:]
                 file += buf
                 left_to_read -= len(buf)
+        self.logger.debug("Response content\n %s", file)
+        self.connect()
         return file
 
-    def connect(self, address):
-        self._socket.connect(address)
+    def connect(self):
+        if self._socket is not None:
+            self._socket.close()
+        self._socket = socket.socket(
+            family=socket.AF_INET,
+            type=socket.SOCK_STREAM,
+        )
+        self._socket.bind((self._bind_address))
+        self._socket.connect((self._connect_address))
+        self.logger.info("Connected to server")
+
+    def register(self):
+
+        #  Check join number
+        join_number = raw_input("Enter join number. ")
+        if not util.xmlstring_to_boolean(self.xmlhttprequest(
+                util.build_url(
+                    "check_test",
+                    {"join_number": join_number}
+                )
+            )
+        ):
+            while True:
+                join_number = raw_input("No such Game Pin, enter right one. ")
+                if util.xmlstring_to_boolean(self.xmlhttprequest(
+                        util.build_url(
+                            "check_test",
+                            {"join_number":
+                                join_number}
+                        )
+                    )
+                ):
+                    break
+        #  Check name
+        name = raw_input("Choose name ")
+        while True:
+            if len(name) < 3:
+                raw_input("Name too short, at least 3 characters. ")
+            else:
+                break
+        if not util.xmlstring_to_boolean(self.xmlhttprequest(
+                util.build_url(
+                    "check_name",
+                    {"join_number": join_number, "name": name}
+                )
+            )
+        ):
+            while True:
+                name = raw_input("Enter join number. ")
+                while True:
+                    if len(name) < 3:
+                        raw_input("Name too short, at least 3 characters. ")
+                    else:
+                        break
+                if util.xmlstring_to_boolean(self.xmlhttprequest(
+                        util.build_url(
+                            "check_test",
+                            {"check_test":
+                                "No such Game Pin, enter right one. "}
+                        )
+                    )
+                ):
+                    break
+        return [join_number, name]
+
+    def play(self, join_number, name):
+        state = "wait"
+        self.xmlhttprequest(util.build_url(
+            "join", {"name": name, "join_number": join_number}), method="GET")
+        self.logger.debug("Registered to %s as %s", join_number, name)
+        url_check_move = util.build_url("check_move_next_page")
+        while True:
+            self.logger.debug("state %s", state)
+            if util.xmlstring_to_boolean(self.xmlhttprequest(url_check_move)):
+                if state in ("wait", "leadeboard"):
+                    state = "wait_question"
+                    self.logger.debug("question")
+                    picture = self.xmlhttprequest("/%s" % self.get_picture())
+                    letter = self.decrypt(picture)
+                    if letter is None:
+                        letter = random.choice(POSSIBLE_ANSWERS)
+                    self.logger.debug("Answered %s", letter)
+                    self.logger.debug("start sending answer")
+                    self.xmlhttprequest(
+                        util.build_url(
+                            "answer",
+                            {"letter": letter
+                             }))
+                    self.logger.debug("ended")
+                elif state == "wait_question":
+                    self.logger.debug("wait_question")
+                    state = "leadeboard"
+                self.xmlhttprequest("/moved_to_next_question")
+                self.logger.debug("Moved to state %s", state)
+
+            time.sleep(1)
+
+    def get_picture(self):
+        text = self.xmlhttprequest("/get_title")
+        question = util.parse_xml_from_string(text).find("./title").text
+        if "<img" not in question:
+            return ""
+        question = question[question.index("<img"):]
+        question = question[0:question.index("/>") + len("/>")]
+        question = question[question.index("src=") + len("src=") + 1:]
+        question = question[:question.index('"')]
+        return question
+
+    def decrypt(self, picture):
+        letter = None
+        if len(picture) > 0 and picture[-1] in POSSIBLE_ANSWERS:
+            letter = picture[-1]
+        return letter
 
     #  Taught robot to love
     def love(self):

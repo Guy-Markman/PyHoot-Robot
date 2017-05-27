@@ -1,3 +1,6 @@
+import urlparse
+from xml.etree import ElementTree
+
 import constants
 
 
@@ -44,4 +47,23 @@ def split_address(address, name):
             """%s need to be in the next format:
                 server_address:server_port""" % name
         )
+    a[1] = int(a[1])
     return a
+
+
+def parse_xml_from_string(xmlstring):
+    return ElementTree.fromstring(xmlstring.decode("utf-8"))
+
+
+def xmlstring_to_boolean(xmlstring):
+    return parse_xml_from_string(str(xmlstring)).attrib["answer"] == "True"
+
+
+def build_url(path, querry={}):
+    return urlparse.urlunsplit(urlparse.SplitResult(
+        "",
+        "",
+        "/%s" % path,
+        "&".join(["%s=%s" % (key, value) for (key, value) in querry.items()]),
+        ""
+    ))

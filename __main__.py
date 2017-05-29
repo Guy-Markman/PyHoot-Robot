@@ -1,3 +1,6 @@
+"""main file"""
+## @file __main__.py main file
+
 import argparse
 import logging
 
@@ -5,6 +8,7 @@ from . import base, constants, robot, util
 
 
 def parse_args():
+    """Parser args"""
     parser = argparse.ArgumentParser()
     LOG_STR_LEVELS = {
         'DEBUG': logging.DEBUG,
@@ -55,6 +59,7 @@ def parse_args():
 
 
 def main():
+    """Main"""
     args = parse_args()
     close_file = []
     if args.log_file:

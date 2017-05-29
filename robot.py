@@ -1,3 +1,9 @@
+"""
+Robot class, the heart of the robot
+"""
+## @file robot.py Robot class, the heart of the robot
+## @package robot.py
+
 import Cookie
 import random
 import socket
@@ -5,11 +11,15 @@ import time
 
 from . import base, constants, util
 
+## The possible answers to any question
 POSSIBLE_ANSWERS = ["A", "B", "C", "D"]
 
 
 class Robot(base.Base):
+    """Robot class, the robot itself"""
+
     def __init__(self, buff_size, bind_address, connect_address):
+        """initialize"""
         super(Robot, self).__init__()
         self._buff_size = buff_size
         self._socket = socket.socket(
@@ -26,6 +36,7 @@ class Robot(base.Base):
             buff_size)
 
     def xmlhttprequest(self, url, method="GET"):
+        """Fucntion to do XMLHTTPRequest without the browser"""
         request = (
             '%s %s %s%s'
             'Host: %s%s'
@@ -63,7 +74,7 @@ class Robot(base.Base):
 
         signature, code, message = status_comps
         if code not in ('200', '302'):
-            raise RuntimeError('HTTP failure %s: %s',  (code, message))
+            raise RuntimeError('HTTP failure %s: %s', (code, message))
 
         #
         # Parse headers
@@ -113,6 +124,7 @@ class Robot(base.Base):
         return file
 
     def connect(self):
+        """Connect to the server"""
         if self._socket is not None:
             self._socket.close()
         self._socket = socket.socket(
@@ -124,10 +136,12 @@ class Robot(base.Base):
         self.logger.info("Connected to server")
 
     def register(self):
+        """Register to the game"""
 
         #  Check join number
         join_number = raw_input("Enter join number. ")
-        if not util.xmlstring_to_boolean(self.xmlhttprequest(
+        if not util.xmlstring_to_boolean(
+            self.xmlhttprequest(
                 util.build_url(
                     "check_test",
                     {"join_number": join_number}
@@ -136,7 +150,8 @@ class Robot(base.Base):
         ):
             while True:
                 join_number = raw_input("No such Game Pin, enter right one. ")
-                if util.xmlstring_to_boolean(self.xmlhttprequest(
+                if util.xmlstring_to_boolean(
+                    self.xmlhttprequest(
                         util.build_url(
                             "check_test",
                             {"join_number":
@@ -152,7 +167,8 @@ class Robot(base.Base):
                 raw_input("Name too short, at least 3 characters. ")
             else:
                 break
-        if not util.xmlstring_to_boolean(self.xmlhttprequest(
+        if not util.xmlstring_to_boolean(
+            self.xmlhttprequest(
                 util.build_url(
                     "check_name",
                     {"join_number": join_number, "name": name}
@@ -166,7 +182,8 @@ class Robot(base.Base):
                         raw_input("Name too short, at least 3 characters. ")
                     else:
                         break
-                if util.xmlstring_to_boolean(self.xmlhttprequest(
+                if util.xmlstring_to_boolean(
+                    self.xmlhttprequest(
                         util.build_url(
                             "check_test",
                             {"check_test":
@@ -178,6 +195,7 @@ class Robot(base.Base):
         return [join_number, name]
 
     def play(self, join_number, name):
+        """Play the game as a player"""
         state = "wait"
         self.xmlhttprequest(util.build_url(
             "join", {"name": name, "join_number": join_number}), method="GET")
@@ -210,6 +228,8 @@ class Robot(base.Base):
             time.sleep(1)
 
     def get_picture(self):
+        """Get the picture from the question
+        @return the picture, if found"""
         text = self.xmlhttprequest("/get_title")
         question = util.parse_xml_from_string(text).find("./title").text
         if "<img" not in question:
@@ -221,11 +241,13 @@ class Robot(base.Base):
         return question
 
     def decrypt(self, picture):
+        """Try to find the data from the picture
+        @return the answer, if found"""
         letter = None
         if len(picture) > 0 and picture[-1] in POSSIBLE_ANSWERS:
             letter = picture[-1]
         return letter
 
-    #  Taught robot to love
     def love(self):
+        """Taught robot to love"""
         return "<3"

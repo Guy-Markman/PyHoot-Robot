@@ -1,8 +1,0 @@
-C:/Users/Guy and Noam/Documents/GitHub/PyHoot-Robot/encrypter/encrypter.py:9: warning: Member main() (function) of namespace encrypter is not documented.
-C:/Users/Guy and Noam/Documents/GitHub/PyHoot-Robot/encrypter/encrypter.py:9: warning: Member main() (function) of namespace encrypter is not documented.
-C:/Users/Guy and Noam/Documents/GitHub/PyHoot-Robot/util.py:1: warning: explicit link request to 'util' could not be resolved
-C:/Users/Guy and Noam/Documents/GitHub/PyHoot-Robot/util.py:3: warning: explicit link request to 'robot' could not be resolved
-C:/Users/Guy and Noam/Documents/GitHub/PyHoot-Robot/util.py:5: warning: explicit link request to 'constants' could not be resolved
-C:/Users/Guy and Noam/Documents/GitHub/PyHoot-Robot/util.py:7: warning: explicit link request to 'base' could not be resolved
-error: Problems running epstopdf. Check your TeX installation!
-error: Problems running epstopdf. Check your TeX installation!

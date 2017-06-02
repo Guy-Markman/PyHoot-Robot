@@ -1,8 +1,6 @@
-"""
-Robot class, the heart of the robot
-"""
-## @file robot.py Robot class, the heart of the robot
-## @package robot.py
+## @package PyHoot-Robot.robot
+# Robot class, the heart of the robot
+## @file robot.py Implementation of @ref PyHoot-Robot.robot
 
 import Cookie
 import random

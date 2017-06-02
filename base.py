@@ -1,6 +1,6 @@
-"""Base module"""
-## @file base.py Base module
-# By Alon Bar-Lev alonbl
+## @package PyHoot-Robot.base
+# Base module
+## @file base.py Implementation of @ref PyHoot-Robot.base
 
 
 import logging

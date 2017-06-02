@@ -1,5 +1,6 @@
-"""Util file"""
-## @file util.py Util file
+## @package PyHoot-Robot.util
+# Util file
+## @file util.py Implementation of @ref PyHoot-Robot.util
 
 
 import urlparse

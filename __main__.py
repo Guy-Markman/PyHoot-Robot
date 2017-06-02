@@ -1,5 +1,6 @@
-"""main file"""
-## @file __main__.py main file
+## @package PyHoot-Robot.__main__
+# Main file
+## @file __main__.py Implementation of @ref PyHoot-Robot.__main__
 
 import argparse
 import logging

@@ -1,5 +1,6 @@
-"""Constants file"""
-## @file constants.py Constants file
+## @package PyHoot-Robot.constants
+# Constants for the program
+## @file constants.py Implementation of @ref PyHoot-Robot.constants
 
 ## maximum size of block
 BLOCK_SIZE = 1024
